@@ -42,6 +42,10 @@ defmodule ChipRato.State do
     }
   end
 
+  def set_memory(state, address, value) do
+    %ChipRato.State{state | memory: Map.put(state.memory, address, value)}
+  end
+
   def get_memory(state, address) do
     <<Map.get(state.memory, address)::8>>
   end

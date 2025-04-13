@@ -1,18 +1,24 @@
 defmodule ChipRato do
-  @moduledoc """
-  Documentation for `ChipRato`.
-  """
+  alias ChipRato.State
 
-  @doc """
-  Hello world.
+  def start(_, _) do
+    {:ok, binary} = File.read("roms/ibm_logo.ch8")
+    byte_list = :binary.bin_to_list(binary)
 
-  ## Examples
+    state =
+      Enum.reduce(Enum.with_index(byte_list), State.new(), fn {byte, index}, state ->
+        State.set_memory(state, index + 512, byte)
+      end)
 
-      iex> ChipRato.hello()
-      :world
+    # Main loop to fetch, decode, and execute instructions
+    main_viewport_config = Application.get_env(:chip_rato, :viewport)
 
-  """
-  def hello do
-    :world
+    # start the application with the viewport
+    children = [
+      {Scenic, [main_viewport_config]},
+      ChipRato.PubSub.Supervisor
+    ]
+
+    Supervisor.start_link(children, strategy: :one_for_one)
   end
 end
