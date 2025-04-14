@@ -14,12 +14,10 @@ defmodule ChipRato.Scene.Screen do
     mix scenic.new.example
   """
 
-  @text_size 24
   @chip8_width 64
   @chip8_height 32
   # Must match the scale in config.exs
   @pixel_scale 30
-  @off_color :black
   # Or :write
   @on_color :lime
 
@@ -27,11 +25,15 @@ defmodule ChipRato.Scene.Screen do
   # setup
 
   # --------------------------------------------------------
+  @impl true
   def init(scene, _param, _opts) do
+
+    Process.register(self(), :screen)
+
     initial_pixels =
       for x <- 0..(@chip8_width - 1), y <- 0..(@chip8_height - 1), into: %{} do
         # Start with all pixels off
-        {{x, y}, false}
+        {{x, y}, true}
       end
 
     graph = build_graph(initial_pixels)
@@ -41,8 +43,10 @@ defmodule ChipRato.Scene.Screen do
     {:ok, scene}
   end
 
-  def handle_input(event, _context, scene) do
-    Logger.info("Received event: #{inspect(event)}")
+  @impl true
+  def handle_cast({:update_pixels, new_pixels}, scene) do
+    graph = build_graph(new_pixels)
+    scene = push_graph(scene, graph)
     {:noreply, scene}
   end
 

@@ -11,7 +11,7 @@ defmodule ChipRato.Decoder do
   def decode_instruction(instruction) do
     # Decode the instruction into opcode and operands
     <<opcode::4, x::4, y::4, n::4>> = <<instruction::16>>
-    {opcode, x, y, n, <<y::4, n::4>>, <<x::4, y::4, n::4>>}
+    {opcode, x, y, n, :binary.decode_unsigned(<<y::4, n::4>>), :binary.decode_unsigned(<<0::4, x::4, y::4, n::4>>)}
   end
 
   def draw_byte(state, x, y, p) do
@@ -32,7 +32,7 @@ defmodule ChipRato.Decoder do
     y_coord = rem(State.get_reg(state, y), 32)
 
     {state, _} =
-      Enum.reduce(0..n, {state, y_coord}, fn i, {state, y} ->
+      Enum.reduce(0..n-1, {state, y_coord}, fn i, {state, y} ->
         state = draw_byte(state, x_coord, y, i + state.index)
         {state, y + 1}
       end)
@@ -45,7 +45,7 @@ defmodule ChipRato.Decoder do
     case opcode do
       0x0 ->
         cond do
-          x == 0x0 && y == 0xE && n == 0x0 ->
+          nnn == 224 ->
             State.clear_display(state)
 
           true ->
@@ -62,9 +62,9 @@ defmodule ChipRato.Decoder do
 
       # Add to register
       0x7 ->
-        State.set_reg(state, x, State.get_reg(state, x) + nn)
+        State.set_reg(state, x, rem(State.get_reg(state, x) + nn, 256))
 
-      OxA ->
+      0xA ->
         State.set_index(state, nnn)
 
       # Draw sprite
