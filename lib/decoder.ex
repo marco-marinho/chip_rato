@@ -48,6 +48,10 @@ defmodule ChipRato.Decoder do
           nnn == 224 ->
             State.clear_display(state)
 
+          nnn == 238 ->
+            # Return from subroutine
+            State.pop_stack(state)
+
           true ->
             state
         end
@@ -56,6 +60,33 @@ defmodule ChipRato.Decoder do
       0x1 ->
         State.set_pc(state, nnn)
 
+      # Jump to subroutine
+      0x2 ->
+        State.push_stack(state, state.pc)
+        State.set_pc(state, nnn)
+
+      # Skip conditionally block
+      0x3 ->
+        if State.get_reg(state, x) == nn do
+          State.increment_pc(state)
+        else
+          state
+        end
+
+      0x4 ->
+        if State.get_reg(state, x) != nn do
+          State.increment_pc(state)
+        else
+          state
+        end
+
+      0x5 ->
+        if State.get_reg(state, x) == State.get_reg(state, y) do
+          State.increment_pc(state)
+        else
+          state
+        end
+
       # Jump to address
       0x6 ->
         State.set_reg(state, x, nn)
@@ -63,6 +94,36 @@ defmodule ChipRato.Decoder do
       # Add to register
       0x7 ->
         State.set_reg(state, x, rem(State.get_reg(state, x) + nn, 256))
+
+      0x8 ->
+
+        case n do
+          0 ->
+            State.set_reg(state, x, State.get_reg(state, y))
+          1 ->
+            State.set_reg(state, x, Bitwise.bor(State.get_reg(state, x), State.get_reg(state, y)))
+          2 ->
+            State.set_reg(state, x, Bitwise.band(State.get_reg(state, x), State.get_reg(state, y)))
+          3 ->
+            State.set_reg(state, x, Bitwise.bxor(State.get_reg(state, x), State.get_reg(state, y)))
+          4 ->
+            result = State.get_reg(state, x) + State.get_reg(state, y)
+            carry = if result > 255, do: 1, else: 0
+            State.set_reg(state, x, rem(result, 256)) |> State.set_reg(15, carry)
+          5 ->
+            result = State.get_reg(state, x) - State.get_reg(state, y)
+            borrow = if State.get_reg(state, x) < State.get_reg(state, y), do: 0, else: 1
+            State.set_reg(state, x, rem(result, 256)) |> State.set_reg(15, borrow)
+
+        end
+
+      # Skip conditionally
+      0x9 ->
+        if State.get_reg(state, x) != State.get_reg(state, y) do
+          State.increment_pc(state)
+        else
+          state
+        end
 
       0xA ->
         State.set_index(state, nnn)

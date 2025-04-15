@@ -42,6 +42,15 @@ defmodule ChipRato.State do
     }
   end
 
+  def push_stack(state, nnn) do
+    %ChipRato.State{state | stack: [nnn | state.stack]}
+  end
+
+  def pop_stack(state) do
+    [nnn | stack] = state.stack
+    %ChipRato.State{state | stack: stack , pc: nnn}
+  end
+
   def set_memory(state, address, value) do
     %ChipRato.State{state | memory: Map.put(state.memory, address, value)}
   end

@@ -6,14 +6,6 @@ defmodule ChipRato.Scene.Screen do
   alias Scenic.Primitives
   # import Scenic.Components
 
-  @note """
-    This is a very simple starter application.
-
-    If you want a more full-on example, please start from:
-
-    mix scenic.new.example
-  """
-
   @chip8_width 64
   @chip8_height 32
   # Must match the scale in config.exs
